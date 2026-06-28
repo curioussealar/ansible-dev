@@ -1,0 +1,4 @@
+---
+report_output_dir: /tmp/ansible-reports
+report_name: "ansible-report"
+report_output_format: html

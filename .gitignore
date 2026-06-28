@@ -1,0 +1,48 @@
+# Secrets and credentials - NEVER commit these
+.env
+secrets/
+.vault_pass
+*.vault
+*_vault_pass*
+
+# Semaphore runtime data
+semaphore-data/
+tmp/semaphore/
+
+# Logs and reports
+logs/
+*.log
+reports/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# Ansible retry files
+*.retry
+
+# Editor/IDE
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# OS
+desktop.ini
+
+# Generated inventory files (keep examples)
+inventories/*/hosts.yml
+!inventories/*/hosts.yml.example
+
+# Terraform state (if used later)
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl

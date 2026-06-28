@@ -1,0 +1,74 @@
+---
+- name: Install and configure nginx demo site
+  hosts: linux
+  gather_facts: true
+
+  vars:
+    nginx_site_name: ansible-demo
+    nginx_site_port: 80
+    nginx_site_root: /var/www/ansible-demo
+
+  tasks:
+    - name: Install nginx
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+        update_cache: true
+      when: ansible_os_family == "Debian"
+
+    - name: Create web root directory
+      ansible.builtin.file:
+        path: "{{ nginx_site_root }}"
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: "0755"
+
+    - name: Deploy demo index page
+      ansible.builtin.template:
+        src: ../templates/nginx_demo_index.html.j2
+        dest: "{{ nginx_site_root }}/index.html"
+        owner: www-data
+        group: www-data
+        mode: "0644"
+      notify: Reload nginx
+
+    - name: Deploy nginx site config
+      ansible.builtin.template:
+        src: ../templates/nginx_site.conf.j2
+        dest: /etc/nginx/sites-available/{{ nginx_site_name }}
+        mode: "0644"
+      notify: Reload nginx
+
+    - name: Enable site
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/{{ nginx_site_name }}
+        dest: /etc/nginx/sites-enabled/{{ nginx_site_name }}
+        state: link
+      notify: Reload nginx
+
+    - name: Remove default nginx site
+      ansible.builtin.file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+      notify: Reload nginx
+
+    - name: Ensure nginx is started and enabled
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: true
+
+    - name: Open port 80 in ufw
+      community.general.ufw:
+        rule: allow
+        port: "80"
+        proto: tcp
+        comment: "HTTP nginx demo"
+      when: linux_common_ufw_enabled | default(false)
+
+  handlers:
+    - name: Reload nginx
+      ansible.builtin.service:
+        name: nginx
+        state: reloaded

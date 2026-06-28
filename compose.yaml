@@ -1,0 +1,110 @@
+---
+# ansible-dev — core stack: PostgreSQL + Semaphore UI
+# Usage:
+#   docker compose --profile linux-target up -d
+#   docker compose up -d   (without test container)
+
+x-semaphore-secrets: &semaphore-secrets
+  SEMAPHORE_DB_PASS_FILE: /run/secrets/postgres_password
+  SEMAPHORE_ACCESS_KEY_ENCRYPTION_FILE: /run/secrets/access_key_encryption
+  SEMAPHORE_COOKIE_HASH_FILE: /run/secrets/cookie_hash
+  SEMAPHORE_COOKIE_ENCRYPTION_FILE: /run/secrets/cookie_encryption
+  SEMAPHORE_ADMIN_PASSWORD_FILE: /run/secrets/admin_password
+
+secrets:
+  postgres_password:
+    file: ./secrets/postgres_password.txt
+  access_key_encryption:
+    file: ./secrets/access_key_encryption.txt
+  cookie_hash:
+    file: ./secrets/cookie_hash.txt
+  cookie_encryption:
+    file: ./secrets/cookie_encryption.txt
+  admin_password:
+    file: ./secrets/admin_password.txt
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-semaphore}
+      POSTGRES_USER: ${POSTGRES_USER:-semaphore}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets:
+      - postgres_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - semaphore-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-semaphore} -d ${POSTGRES_DB:-semaphore}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  semaphore:
+    image: semaphoreui/semaphore:${SEMAPHORE_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${SEMAPHORE_PORT:-3000}:3000"
+    environment:
+      <<: *semaphore-secrets
+      SEMAPHORE_DB_DIALECT: postgres
+      SEMAPHORE_DB_HOST: postgres
+      SEMAPHORE_DB_PORT: 5432
+      SEMAPHORE_DB: ${POSTGRES_DB:-semaphore}
+      SEMAPHORE_DB_USER: ${POSTGRES_USER:-semaphore}
+      SEMAPHORE_PLAYBOOK_PATH: /tmp/semaphore
+      SEMAPHORE_ADMIN: ${SEMAPHORE_ADMIN:-admin}
+      SEMAPHORE_ADMIN_EMAIL: ${SEMAPHORE_ADMIN_EMAIL:-admin@example.com}
+      SEMAPHORE_ADMIN_NAME: ${SEMAPHORE_ADMIN_NAME:-Administrator}
+      SEMAPHORE_GIT_CLIENT: ${SEMAPHORE_GIT_CLIENT:-cmd_git}
+      TZ: ${TZ:-UTC}
+    secrets:
+      - postgres_password
+      - access_key_encryption
+      - cookie_hash
+      - cookie_encryption
+      - admin_password
+    volumes:
+      # Python requirements (pywinrm, pypsrp, etc.) installed at container startup
+      - ./requirements.txt:/etc/semaphore/requirements.txt:ro
+      - semaphore_tmp:/tmp/semaphore
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - semaphore-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3000/api/ping || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  linux-target:
+    build:
+      context: ./docker/linux-target
+      dockerfile: Dockerfile
+      args:
+        ANSIBLE_PUBKEY: ${ANSIBLE_PUBKEY:-}
+    image: ansible-dev/linux-target:local
+    hostname: linux-target
+    restart: unless-stopped
+    networks:
+      - semaphore-net
+    profiles:
+      - linux-target
+    # Not exposed to host — accessible only inside semaphore-net
+    expose:
+      - "22"
+
+volumes:
+  postgres_data:
+  semaphore_tmp:
+
+networks:
+  semaphore-net:
+    driver: bridge

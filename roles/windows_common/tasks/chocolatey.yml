@@ -1,0 +1,18 @@
+---
+- name: Check if Chocolatey is already installed
+  ansible.windows.win_stat:
+    path: C:\ProgramData\chocolatey\bin\choco.exe
+  register: choco_stat
+
+- name: Bootstrap Chocolatey
+  ansible.windows.win_shell: |
+    Set-ExecutionPolicy Bypass -Scope Process -Force
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+    iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+  when: not choco_stat.stat.exists
+  register: choco_install
+
+- name: Show Chocolatey install result
+  ansible.builtin.debug:
+    msg: "Chocolatey installed: {{ choco_install.stdout_lines | default(['already present']) }}"
+  when: not choco_stat.stat.exists

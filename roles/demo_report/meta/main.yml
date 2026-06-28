@@ -1,0 +1,10 @@
+---
+galaxy_info:
+  role_name: demo_report
+  author: ansible-dev-lab
+  description: Generate HTML infrastructure reports from gathered Ansible facts
+  min_ansible_version: "2.15"
+  platforms:
+    - name: all
+
+dependencies: []

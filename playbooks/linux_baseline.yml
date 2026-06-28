@@ -1,0 +1,24 @@
+---
+- name: Apply Linux baseline hardening and configuration
+  hosts: linux
+  gather_facts: true
+
+  pre_tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+      when: ansible_os_family == "Debian"
+
+  roles:
+    - role: linux_common
+
+  post_tasks:
+    - name: Ensure all services are started
+      ansible.builtin.service:
+        name: "{{ item }}"
+        state: started
+        enabled: true
+      loop:
+        - ssh
+      ignore_errors: true

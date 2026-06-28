@@ -1,0 +1,44 @@
+---
+- name: Set Windows timezone
+  community.windows.win_timezone:
+    timezone: "{{ windows_timezone | default('SE Asia Standard Time') }}"
+
+- name: Set hostname
+  ansible.windows.win_hostname:
+    name: "{{ inventory_hostname }}"
+  register: win_hostname
+  notify: Reboot Windows
+
+- name: Configure Windows Update categories
+  ansible.windows.win_updates:
+    category_names: "{{ windows_update_categories }}"
+    state: searched
+    reboot: false
+  register: update_result
+  check_mode: true
+
+- name: Show pending Windows updates
+  ansible.builtin.debug:
+    msg: "Pending updates: {{ update_result.found_update_count | default(0) }}"
+
+- name: Configure Windows Firewall — allow WinRM HTTPS
+  ansible.windows.win_firewall_rule:
+    name: "Allow WinRM HTTPS 5986"
+    localport: 5986
+    action: allow
+    direction: in
+    protocol: tcp
+    state: present
+    enabled: true
+
+- name: Bootstrap Chocolatey
+  ansible.builtin.include_tasks: chocolatey.yml
+  when: windows_chocolatey_bootstrap | bool
+
+- name: Install Chocolatey packages
+  chocolatey.chocolatey.win_chocolatey:
+    name: "{{ windows_choco_packages }}"
+    state: present
+  when:
+    - windows_chocolatey_bootstrap | bool
+    - windows_choco_packages | length > 0

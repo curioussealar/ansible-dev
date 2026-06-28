@@ -1,0 +1,27 @@
+---
+- name: Install ufw
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Set ufw default policies
+  community.general.ufw:
+    direction: "{{ item.direction }}"
+    default: "{{ item.policy }}"
+  loop:
+    - { direction: incoming, policy: "{{ linux_common_ufw_default_incoming }}" }
+    - { direction: outgoing, policy: "{{ linux_common_ufw_default_outgoing }}" }
+
+- name: Apply ufw rules
+  community.general.ufw:
+    rule: "{{ item.rule }}"
+    port: "{{ item.port | string }}"
+    proto: "{{ item.proto | default('tcp') }}"
+    comment: "{{ item.comment | default('') }}"
+  loop: "{{ linux_common_ufw_rules }}"
+
+- name: Enable ufw
+  community.general.ufw:
+    state: enabled
+    logging: "on"

@@ -1,0 +1,19 @@
+---
+- name: Gather and display Linux host facts
+  hosts: linux
+  gather_facts: true
+
+  tasks:
+    - name: Show key system facts
+      ansible.builtin.debug:
+        msg:
+          - "Hostname:      {{ ansible_hostname }}"
+          - "FQDN:          {{ ansible_fqdn }}"
+          - "OS:            {{ ansible_distribution }} {{ ansible_distribution_version }}"
+          - "Kernel:        {{ ansible_kernel }}"
+          - "Architecture:  {{ ansible_architecture }}"
+          - "CPU cores:     {{ ansible_processor_vcpus }}"
+          - "RAM (MB):      {{ ansible_memtotal_mb }}"
+          - "IPv4:          {{ ansible_default_ipv4.address | default('N/A') }}"
+          - "Python:        {{ ansible_python_version }}"
+          - "Uptime (sec):  {{ ansible_uptime_seconds }}"

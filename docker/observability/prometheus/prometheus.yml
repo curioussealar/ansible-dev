@@ -1,0 +1,43 @@
+---
+global:
+  scrape_interval:     15s
+  evaluation_interval: 15s
+  scrape_timeout:      10s
+
+alerting:
+  alertmanagers: []
+
+rule_files: []
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: semaphore-http
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['semaphore:3000']
+    # Semaphore doesn't expose Prometheus metrics natively;
+    # use blackbox-exporter to check HTTP availability instead.
+    scrape_interval: 60s
+
+  - job_name: semaphore-blackbox
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+          - http://semaphore:3000/api/ping
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  - job_name: postgres
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+    scrape_interval: 30s

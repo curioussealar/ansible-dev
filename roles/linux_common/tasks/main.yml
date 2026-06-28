@@ -1,0 +1,41 @@
+---
+- name: Include OS-specific variables
+  ansible.builtin.include_vars: "{{ ansible_os_family | lower }}.yml"
+  failed_when: false
+
+- name: Install common packages
+  ansible.builtin.package:
+    name: "{{ common_packages }}"
+    state: present
+
+- name: Set hostname
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}"
+    use: systemd
+  when: ansible_system == "Linux"
+
+- name: Configure sysctl parameters
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: true
+    sysctl_file: /etc/sysctl.d/99-ansible.conf
+  loop: "{{ linux_common_sysctl | dict2items }}"
+
+- name: Configure ufw
+  ansible.builtin.include_tasks: ufw.yml
+  when: linux_common_ufw_enabled | bool
+
+- name: Configure SSH hardening
+  ansible.builtin.include_tasks: ssh_hardening.yml
+
+- name: Configure unattended upgrades
+  ansible.builtin.include_tasks: unattended_upgrades.yml
+  when:
+    - linux_common_unattended_upgrades | bool
+    - ansible_os_family == "Debian"
+
+- name: Set timezone
+  community.general.timezone:
+    name: "{{ ansible_tz }}"

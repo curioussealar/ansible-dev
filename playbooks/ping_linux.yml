@@ -1,0 +1,13 @@
+---
+- name: Ping Linux hosts
+  hosts: linux
+  gather_facts: false
+
+  tasks:
+    - name: Ping
+      ansible.builtin.ping:
+      register: ping_result
+
+    - name: Show result
+      ansible.builtin.debug:
+        msg: "{{ inventory_hostname }} is reachable — pong: {{ ping_result.ping }}"

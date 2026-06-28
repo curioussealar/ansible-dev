@@ -1,0 +1,28 @@
+---
+# inventories/windows/hosts.yml.example
+# Copy to hosts.yml and fill in real values.
+# Targets: Real Windows hosts via WinRM HTTPS (port 5986).
+# See docs/windows-winrm.md for WinRM setup instructions.
+
+all:
+  children:
+    windows:
+      vars:
+        ansible_connection: winrm
+        ansible_winrm_scheme: https
+        ansible_port: 5986
+        ansible_winrm_transport: ntlm
+        # LAB ONLY: disable cert validation for self-signed certs
+        ansible_winrm_server_cert_validation: ignore
+        ansible_winrm_operation_timeout_sec: 60
+        ansible_winrm_read_timeout_sec: 70
+      hosts:
+        win-lab-01:
+          ansible_host: YOUR_WINDOWS_HOST_IP
+          ansible_user: ansible_svc
+          ansible_password: "{{ vault_win_lab_01_password }}"
+
+        win-lab-02:
+          ansible_host: YOUR_SECOND_WINDOWS_HOST_IP
+          ansible_user: ansible_svc
+          ansible_password: "{{ vault_win_lab_02_password }}"

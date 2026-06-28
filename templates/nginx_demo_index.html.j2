@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Ansible nginx Demo — {{ ansible_hostname }}</title>
+  <style>
+    body { font-family: sans-serif; background: #1a1a2e; color: #e0e0e0; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+    .card { background: #16213e; border-radius: 12px; padding: 3rem; max-width: 600px; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+    h1 { color: #0f3460; background: linear-gradient(135deg, #0099ff, #00d4aa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 2.5rem; }
+    .badge { display: inline-block; background: #0f3460; border-radius: 20px; padding: 4px 16px; font-size: 0.85rem; margin: 4px; }
+    table { margin: 1.5rem auto; text-align: left; }
+    td { padding: 6px 16px; }
+    td:first-child { color: #aaa; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Hello from Ansible!</h1>
+    <p>This page was deployed by Ansible via <strong>Semaphore UI</strong>.</p>
+
+    <table>
+      <tr><td>Hostname</td><td>{{ ansible_hostname }}</td></tr>
+      <tr><td>OS</td><td>{{ ansible_distribution }} {{ ansible_distribution_version }}</td></tr>
+      <tr><td>IP Address</td><td>{{ ansible_default_ipv4.address | default('N/A') }}</td></tr>
+      <tr><td>Deployed</td><td>{{ ansible_date_time.iso8601 | default('N/A') }}</td></tr>
+    </table>
+
+    <div>
+      <span class="badge">Ansible</span>
+      <span class="badge">Semaphore UI</span>
+      <span class="badge">Docker</span>
+      <span class="badge">nginx</span>
+    </div>
+  </div>
+</body>
+</html>

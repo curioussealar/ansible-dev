@@ -1,0 +1,48 @@
+---
+- name: Windows file and directory management demo
+  hosts: windows
+  gather_facts: false
+
+  vars:
+    demo_base_dir: C:\ansible-demo
+    demo_files:
+      - name: hello.txt
+        content: "Hello from Ansible! Managed by Semaphore UI."
+      - name: info.txt
+        content: "Generated at: {{ ansible_date_time.iso8601 | default('unknown') }}"
+
+  tasks:
+    - name: Create demo directory
+      ansible.windows.win_file:
+        path: "{{ demo_base_dir }}"
+        state: directory
+
+    - name: Create demo files
+      ansible.windows.win_copy:
+        content: "{{ item.content }}"
+        dest: "{{ demo_base_dir }}\\{{ item.name }}"
+      loop: "{{ demo_files }}"
+
+    - name: List directory contents
+      ansible.windows.win_shell: "Get-ChildItem -Path '{{ demo_base_dir }}' | Format-Table Name, Length, LastWriteTime -AutoSize | Out-String"
+      register: dir_listing
+      changed_when: false
+
+    - name: Show directory listing
+      ansible.builtin.debug:
+        msg: "{{ dir_listing.stdout_lines }}"
+
+    - name: Read file contents
+      ansible.windows.win_shell: "Get-Content '{{ demo_base_dir }}\\hello.txt'"
+      register: file_content
+      changed_when: false
+
+    - name: Show file content
+      ansible.builtin.debug:
+        msg: "{{ file_content.stdout_lines }}"
+
+    - name: Clean up demo directory
+      ansible.windows.win_file:
+        path: "{{ demo_base_dir }}"
+        state: absent
+      tags: cleanup

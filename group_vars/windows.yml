@@ -1,0 +1,31 @@
+---
+# group_vars/windows.yml — defaults for all Windows hosts
+
+ansible_connection: winrm
+ansible_winrm_scheme: https
+ansible_port: 5986
+ansible_winrm_transport: ntlm
+
+# LAB ONLY — disable certificate validation for self-signed certs.
+# Set to 'validate' in production with a trusted certificate.
+ansible_winrm_server_cert_validation: ignore
+
+ansible_winrm_operation_timeout_sec: 60
+ansible_winrm_read_timeout_sec: 70
+
+# Windows-specific shell/module settings
+ansible_shell_type: powershell
+ansible_become_method: runas
+
+# IIS demo gate — set to true to enable IIS installation
+windows_enable_iis: false
+
+# Chocolatey bootstrap
+windows_chocolatey_bootstrap: true
+windows_choco_packages: []
+
+# Windows Update settings (used by windows_common role)
+windows_update_categories:
+  - CriticalUpdates
+  - SecurityUpdates
+windows_update_reboot: false

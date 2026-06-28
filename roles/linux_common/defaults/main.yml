@@ -1,0 +1,17 @@
+---
+linux_common_ssh_port: 22
+linux_common_allowed_users:
+  - ansible
+
+linux_common_ufw_enabled: true
+linux_common_ufw_default_incoming: deny
+linux_common_ufw_default_outgoing: allow
+linux_common_ufw_rules:
+  - { rule: allow, port: 22, proto: tcp, comment: "SSH" }
+
+linux_common_sysctl:
+  net.ipv4.ip_forward: 0
+  net.ipv4.conf.all.rp_filter: 1
+  kernel.randomize_va_space: 2
+
+linux_common_unattended_upgrades: true

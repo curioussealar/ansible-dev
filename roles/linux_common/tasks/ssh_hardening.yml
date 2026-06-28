@@ -1,0 +1,22 @@
+---
+- name: Configure SSH daemon hardening
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+    backup: true
+    validate: sshd -t -f %s
+  loop:
+    - { regexp: '^#?PasswordAuthentication', line: 'PasswordAuthentication no' }
+    - { regexp: '^#?PubkeyAuthentication',   line: 'PubkeyAuthentication yes' }
+    - { regexp: '^#?PermitRootLogin',        line: 'PermitRootLogin no' }
+    - { regexp: '^#?X11Forwarding',          line: 'X11Forwarding no' }
+    - { regexp: '^#?MaxAuthTries',           line: 'MaxAuthTries 4' }
+    - { regexp: '^#?ClientAliveInterval',    line: 'ClientAliveInterval 300' }
+    - { regexp: '^#?ClientAliveCountMax',    line: 'ClientAliveCountMax 2' }
+    - { regexp: '^#?AllowAgentForwarding',   line: 'AllowAgentForwarding no' }
+    - { regexp: '^#?PermitEmptyPasswords',   line: 'PermitEmptyPasswords no' }
+  notify: Restart sshd
+  # Don't lock ourselves out; only apply when a valid authorized key is confirmed
+  when: linux_common_allowed_users | length > 0

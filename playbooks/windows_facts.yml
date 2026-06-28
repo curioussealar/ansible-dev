@@ -1,0 +1,29 @@
+---
+- name: Gather and display Windows host facts
+  hosts: windows
+  gather_facts: true
+
+  tasks:
+    - name: Show key system facts
+      ansible.builtin.debug:
+        msg:
+          - "Hostname:        {{ ansible_hostname }}"
+          - "FQDN:            {{ ansible_fqdn }}"
+          - "OS:              {{ ansible_distribution }} {{ ansible_distribution_version }}"
+          - "OS Build:        {{ ansible_os_build | default('N/A') }}"
+          - "Architecture:    {{ ansible_architecture }}"
+          - "CPU cores:       {{ ansible_processor_count }}"
+          - "RAM (MB):        {{ ansible_memtotal_mb }}"
+          - "IPv4:            {{ ansible_ip_addresses | default(['N/A']) | join(', ') }}"
+          - "PowerShell:      {{ ansible_powershell_version | default('N/A') }}"
+          - "Uptime (sec):    {{ ansible_uptime_seconds | default('N/A') }}"
+          - "Time zone:       {{ ansible_date_time.tz | default('N/A') }}"
+
+    - name: List installed hotfixes
+      ansible.windows.win_shell: Get-HotFix | Select-Object -Last 5 | Format-Table -AutoSize | Out-String
+      register: hotfixes
+      changed_when: false
+
+    - name: Show recent hotfixes
+      ansible.builtin.debug:
+        msg: "{{ hotfixes.stdout_lines }}"

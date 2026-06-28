@@ -1,0 +1,32 @@
+---
+# inventories/internet-lab/hosts.yml.example
+# Copy to hosts.yml and fill in real values.
+# Targets: Ubuntu Server 24.04 VPS on public internet.
+
+all:
+  children:
+    linux:
+      hosts:
+        vps01:
+          ansible_host: YOUR_VPS_IP_OR_HOSTNAME
+          ansible_port: 22
+          ansible_user: ansible
+          ansible_ssh_private_key_file: ~/.ssh/ansible_lab_ed25519
+          ansible_ssh_common_args: "-o StrictHostKeyChecking=accept-new"
+
+        vps02:
+          ansible_host: YOUR_SECOND_VPS_IP
+          ansible_port: 22
+          ansible_user: ansible
+          ansible_ssh_private_key_file: ~/.ssh/ansible_lab_ed25519
+        
+        ubuntu-vm:
+          ansible_host: 192.168.118.128
+          ansible_user: ansible
+          ansible_ssh_private_key_file: ~/.ssh/ansible_lab_ed25519
+          ansible_become: true
+          ansible_become_method: sudo
+          # Prefer passwordless sudo for the ansible service account.
+          # If you must use a become password in a lab, store it in Ansible Vault
+          # or Semaphore Key Store instead of committing it here.
+          ansible_ssh_common_args: "-o StrictHostKeyChecking=accept-new"

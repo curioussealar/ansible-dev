@@ -1,0 +1,31 @@
+---
+# group_vars/linux.yml — defaults for all Linux hosts
+
+ansible_connection: ssh
+ansible_python_interpreter: /usr/bin/python3
+
+# sudo escalation
+ansible_become: true
+ansible_become_method: sudo
+ansible_become_user: root
+
+# SSH hardening for managed hosts (applied by linux_common role)
+linux_common_ssh_port: 22
+linux_common_allowed_users:
+  - ansible
+
+linux_common_sysctl:
+  net.ipv4.ip_forward: 1
+  net.ipv4.conf.all.rp_filter: 1
+  net.ipv4.conf.default.rp_filter: 1
+  kernel.randomize_va_space: 2
+
+# Automatic security updates
+linux_common_unattended_upgrades: true
+
+# Firewall (ufw)
+linux_common_ufw_enabled: true
+linux_common_ufw_default_incoming: deny
+linux_common_ufw_default_outgoing: allow
+linux_common_ufw_rules:
+  - { rule: allow, port: 22, proto: tcp, comment: "SSH" }

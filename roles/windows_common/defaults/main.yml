@@ -1,0 +1,8 @@
+---
+windows_timezone: "SE Asia Standard Time"
+windows_chocolatey_bootstrap: true
+windows_choco_packages: []
+windows_update_categories:
+  - CriticalUpdates
+  - SecurityUpdates
+windows_update_reboot: false

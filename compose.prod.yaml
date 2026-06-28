@@ -1,0 +1,43 @@
+---
+# compose.prod.yaml — production overlay for VPS deployment
+# Adds Caddy reverse proxy with automatic HTTPS.
+# Usage:
+#   docker compose -f compose.yaml -f compose.prod.yaml up -d
+#
+# Requirements:
+#   - PUBLIC_HOSTNAME must be set in .env (e.g. semaphore.example.com)
+#   - DNS A record must point PUBLIC_HOSTNAME to this server
+#   - Port 80 and 443 must be open in firewall
+#
+# Without a domain: keep using compose.yaml only (port bound to 127.0.0.1)
+# and access via SSH tunnel:
+#   ssh -L 3000:localhost:3000 user@your-vps
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      PUBLIC_HOSTNAME: ${PUBLIC_HOSTNAME:?PUBLIC_HOSTNAME must be set for prod deployment}
+    volumes:
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - semaphore-net
+    depends_on:
+      semaphore:
+        condition: service_healthy
+
+  # Override: in prod, semaphore listens on all interfaces (Caddy is the boundary)
+  semaphore:
+    ports:
+      - "127.0.0.1:${SEMAPHORE_PORT:-3000}:3000"
+
+volumes:
+  caddy_data:
+  caddy_config:

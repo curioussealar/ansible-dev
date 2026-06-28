@@ -1,0 +1,36 @@
+---
+# site.yml — cross-platform master playbook
+# Applies Linux baseline to linux group and Windows baseline to windows group.
+# Run: ansible-playbook playbooks/site.yml
+
+- name: Cross-platform site configuration
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Show target platform
+      ansible.builtin.debug:
+        msg: "Target: {{ inventory_hostname }} ({{ ansible_system | default('unknown') }})"
+
+# Linux plays
+- name: Apply Linux baseline
+  hosts: linux
+  gather_facts: true
+  roles:
+    - role: linux_common
+
+# Windows plays
+- name: Apply Windows baseline
+  hosts: windows
+  gather_facts: true
+  roles:
+    - role: windows_common
+
+# Reporting
+- name: Generate infrastructure report
+  hosts: all
+  gather_facts: true
+  roles:
+    - role: demo_report
+  vars:
+    report_name: "site-report-{{ ansible_date_time.date | default('unknown') }}"

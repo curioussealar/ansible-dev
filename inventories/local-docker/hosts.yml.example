@@ -1,0 +1,18 @@
+---
+# inventories/local-docker/hosts.yml.example
+# Copy to hosts.yml and fill in real values.
+# This file targets the linux-target container started by:
+#   docker compose --profile linux-target up -d
+
+all:
+  children:
+    linux:
+      hosts:
+        linux-target:
+          ansible_host: linux-target      # Docker DNS name inside semaphore-net
+          ansible_port: 22
+          ansible_user: ansible
+          ansible_ssh_private_key_file: ~/.ssh/ansible_lab_ed25519
+          # When running from host (not from inside Semaphore container):
+          # ansible_host: localhost
+          # ansible_port: 2222            # if you expose port 2222 in compose.yaml

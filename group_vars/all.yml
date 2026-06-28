@@ -1,0 +1,26 @@
+---
+# group_vars/all.yml — safe defaults applied to every host
+
+# Timezone
+ansible_tz: "Asia/Ho_Chi_Minh"
+
+# NTP servers
+ntp_servers:
+  - pool.ntp.org
+  - time.cloudflare.com
+
+# Common packages to ensure are present on all Linux hosts
+common_packages:
+  - curl
+  - wget
+  - unzip
+  - ca-certificates
+  - gnupg
+  - lsb-release
+
+# Report output path (used by demo_report role)
+report_output_dir: /tmp/ansible-reports
+report_output_format: html   # html | txt
+
+# Tags for inventory metadata (informational only)
+lab_environment: local-docker

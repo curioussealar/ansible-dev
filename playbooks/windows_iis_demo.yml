@@ -1,0 +1,87 @@
+---
+# Install and configure IIS on Windows.
+# Gate: set windows_enable_iis: true in group_vars/windows.yml or pass -e windows_enable_iis=true
+
+- name: Install and configure IIS demo
+  hosts: windows
+  gather_facts: true
+
+  pre_tasks:
+    - name: Assert IIS demo is enabled
+      ansible.builtin.assert:
+        that: windows_enable_iis | bool
+        fail_msg: >
+          IIS installation is gated. Set windows_enable_iis: true in group_vars/windows.yml
+          or pass -e windows_enable_iis=true to run this playbook.
+
+  tasks:
+    - name: Install IIS web server role
+      ansible.windows.win_feature:
+        name:
+          - Web-Server
+          - Web-Common-Http
+          - Web-Static-Content
+          - Web-Default-Doc
+        state: present
+        include_management_tools: true
+      register: iis_install
+
+    - name: Reboot if required after feature installation
+      ansible.windows.win_reboot:
+        reboot_timeout: 300
+      when: iis_install.reboot_required
+
+    - name: Ensure IIS service is started
+      ansible.windows.win_service:
+        name: W3SVC
+        state: started
+        start_mode: auto
+
+    - name: Create IIS demo site directory
+      ansible.windows.win_file:
+        path: C:\inetpub\ansible-demo
+        state: directory
+
+    - name: Deploy demo HTML page
+      ansible.windows.win_copy:
+        content: |
+          <!DOCTYPE html>
+          <html>
+          <head><title>Ansible IIS Demo</title></head>
+          <body>
+            <h1>Hello from Ansible!</h1>
+            <p>This page was deployed by Ansible via Semaphore UI.</p>
+            <p>Host: {{ ansible_hostname }}</p>
+            <p>OS: {{ ansible_distribution }} {{ ansible_distribution_version }}</p>
+          </body>
+          </html>
+        dest: C:\inetpub\ansible-demo\index.html
+
+    - name: Create IIS site
+      community.windows.win_iis_website:
+        name: ansible-demo
+        state: started
+        port: 8080
+        physical_path: C:\inetpub\ansible-demo
+        application_pool: DefaultAppPool
+
+    - name: Open firewall port 8080 for IIS demo
+      ansible.windows.win_firewall_rule:
+        name: "Allow IIS Demo Port 8080"
+        localport: 8080
+        action: allow
+        direction: in
+        protocol: tcp
+        state: present
+        enabled: true
+
+    - name: Verify IIS responds
+      ansible.windows.win_uri:
+        url: http://localhost:8080
+        method: GET
+        return_content: true
+      register: iis_response
+
+    - name: Show IIS response
+      ansible.builtin.debug:
+        msg: "IIS status: {{ iis_response.status_code }} — site is up!"

@@ -1,0 +1,13 @@
+---
+- name: Ping Windows hosts
+  hosts: windows
+  gather_facts: false
+
+  tasks:
+    - name: Ping via WinRM
+      ansible.windows.win_ping:
+      register: ping_result
+
+    - name: Show result
+      ansible.builtin.debug:
+        msg: "{{ inventory_hostname }} is reachable over WinRM — ping: {{ ping_result.ping }}"
