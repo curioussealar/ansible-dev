@@ -3,11 +3,31 @@
   hosts: linux
   gather_facts: false
 
+  vars:
+    linux_connectivity_target: "8.8.8.8"
+    linux_connectivity_ping_count: 4
+    linux_connectivity_ping_timeout: 2
+
   tasks:
-    - name: Ping
+    - name: Ping host with Ansible module
       ansible.builtin.ping:
       register: ping_result
 
-    - name: Show result
+    - name: Show Ansible ping result
       ansible.builtin.debug:
-        msg: "{{ inventory_hostname }} is reachable — pong: {{ ping_result.ping }}"
+        msg: "{{ inventory_hostname }} is reachable - pong: {{ ping_result.ping }}"
+
+    - name: Ping public DNS from Linux target
+      ansible.builtin.command:
+        cmd: >-
+          ping -c {{ linux_connectivity_ping_count }}
+          -W {{ linux_connectivity_ping_timeout }}
+          {{ linux_connectivity_target }}
+      register: internet_ping_result
+      changed_when: false
+
+    - name: Show public DNS ping result
+      ansible.builtin.debug:
+        msg:
+          - "{{ inventory_hostname }} can ping {{ linux_connectivity_target }}"
+          - "{{ internet_ping_result.stdout_lines }}"
