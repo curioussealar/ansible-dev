@@ -1,0 +1,82 @@
+---
+- name: Check Linux network and system information
+  hosts: linux
+  gather_facts: true
+
+  vars:
+    network_ping_target: "8.8.8.8"
+    network_dns_test_host: "google.com"
+    network_ping_count: 4
+    network_ping_timeout: 2
+    linux_diagnostic_commands:
+      - name: Kernel and hostname
+        cmd: uname -a
+      - name: Uptime
+        cmd: uptime
+      - name: Memory
+        cmd: free -h
+      - name: Disk usage
+        cmd: df -hT
+      - name: Network interfaces
+        cmd: ip -brief address
+      - name: Routing table
+        cmd: ip route show
+      - name: ARP and neighbor table
+        cmd: ip neigh show
+      - name: DNS resolver config
+        cmd: cat /etc/resolv.conf
+      - name: DNS lookup test
+        cmd: getent hosts {{ network_dns_test_host }}
+      - name: ICMP ping public IP
+        cmd: ping -c {{ network_ping_count }} -W {{ network_ping_timeout }} {{ network_ping_target }}
+      - name: ICMP ping DNS hostname
+        cmd: ping -c {{ network_ping_count }} -W {{ network_ping_timeout }} {{ network_dns_test_host }}
+      - name: Listening TCP and UDP ports
+        cmd: ss -tuln
+      - name: Failed systemd units
+        cmd: systemctl --failed --no-pager
+
+  tasks:
+    - name: Show Linux system facts
+      ansible.builtin.debug:
+        msg:
+          - "Host:          {{ inventory_hostname }}"
+          - "Hostname:      {{ ansible_hostname | default('N/A') }}"
+          - "FQDN:          {{ ansible_fqdn | default('N/A') }}"
+          - "OS:            {{ ansible_distribution | default('N/A') }} {{ ansible_distribution_version | default('') }}"
+          - "Kernel:        {{ ansible_kernel | default('N/A') }}"
+          - "Architecture:  {{ ansible_architecture | default('N/A') }}"
+          - "CPU cores:     {{ ansible_processor_vcpus | default(ansible_processor_count | default('N/A')) }}"
+          - "RAM (MB):      {{ ansible_memtotal_mb | default('N/A') }}"
+          - "Default IPv4:  {{ ansible_default_ipv4.address | default('N/A') }}"
+          - "Gateway:       {{ ansible_default_ipv4.gateway | default('N/A') }}"
+          - "DNS servers:   {{ ansible_dns.nameservers | default([]) | join(', ') | default('N/A') }}"
+          - "Python:        {{ ansible_python_version | default('N/A') }}"
+          - "Uptime (sec):  {{ ansible_uptime_seconds | default('N/A') }}"
+
+    - name: Run Linux diagnostic commands
+      ansible.builtin.command:
+        cmd: "{{ item.cmd }}"
+      loop: "{{ linux_diagnostic_commands }}"
+      register: linux_diagnostic_results
+      changed_when: false
+      failed_when: false
+
+    - name: Show Linux diagnostic command output
+      ansible.builtin.debug:
+        msg:
+          - "===== {{ item.item.name }} ====="
+          - "Command: {{ item.item.cmd }}"
+          - "Return code: {{ item.rc }}"
+          - "STDOUT:"
+          - "{{ item.stdout_lines | default([]) }}"
+          - "STDERR:"
+          - "{{ item.stderr_lines | default([]) }}"
+      loop: "{{ linux_diagnostic_results.results }}"
+
+    - name: Show network test summary
+      ansible.builtin.debug:
+        msg:
+          - "Ping {{ network_ping_target }} rc={{ (linux_diagnostic_results.results | selectattr('item.name', 'equalto', 'ICMP ping public IP') | first).rc }}"
+          - "DNS lookup {{ network_dns_test_host }} rc={{ (linux_diagnostic_results.results | selectattr('item.name', 'equalto', 'DNS lookup test') | first).rc }}"
+          - "Ping {{ network_dns_test_host }} rc={{ (linux_diagnostic_results.results | selectattr('item.name', 'equalto', 'ICMP ping DNS hostname') | first).rc }}"

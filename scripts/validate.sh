@@ -83,6 +83,7 @@ if command -v ansible-playbook &>/dev/null; then
     PLAYBOOKS=(
         playbooks/ping_linux.yml
         playbooks/linux_facts.yml
+        playbooks/linux_network_systeminfo.yml
         playbooks/linux_baseline.yml
         playbooks/install_docker_ubuntu.yml
         playbooks/nginx_demo.yml
